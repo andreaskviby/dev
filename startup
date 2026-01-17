@@ -1,0 +1,190 @@
+#!/bin/bash
+# ══════════════════════════════════════════════════════════════════════════════
+# STARTUP - Quick Claude Code multi-pane launcher
+# ══════════════════════════════════════════════════════════════════════════════
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HERD_DIR="$HOME/Herd"
+SESSION_NAME="dev-$(date +%H%M%S)"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+BOLD='\033[1m'
+DIM='\033[2m'
+
+# Claude startup prompt
+CLAUDE_PROMPT="Run npm run dev in the background, git pull from remote and then tell me status of the git hub repo"
+
+print_header() {
+    echo ""
+    echo -e "${CYAN}┌──────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${CYAN}│${NC}  ${BOLD}🚀 Quick Startup - Claude Code Launcher${NC}                        ${CYAN}│${NC}"
+    echo -e "${CYAN}└──────────────────────────────────────────────────────────────────┘${NC}"
+    echo ""
+}
+
+log_success() {
+    echo -e "  ${GREEN}✓${NC}  $1"
+}
+
+log_error() {
+    echo -e "  ${RED}✗${NC}  $1"
+}
+
+log_step() {
+    echo -e "  ${CYAN}→${NC}  $1"
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MAIN
+# ─────────────────────────────────────────────────────────────────────────────
+
+print_header
+
+# Check for tmux
+if ! command -v tmux &> /dev/null; then
+    log_error "tmux is not installed!"
+    exit 1
+fi
+
+# Collect all folders
+FOLDER_LIST=()
+for dir in "$HERD_DIR"/*/; do
+    [[ -d "$dir" ]] || continue
+    name=$(basename "$dir")
+    [[ "$name" == .* ]] && continue
+    FOLDER_LIST+=("$name")
+done
+
+# Display in 2 columns
+echo -e "  ${BOLD}Select folders (1-4 panes):${NC}"
+echo -e "  ${DIM}Enter numbers separated by commas, e.g.: 37,51,47${NC}"
+echo ""
+
+total=${#FOLDER_LIST[@]}
+col_width=35
+
+for ((i=0; i<total; i+=2)); do
+    left_num=$((i + 1))
+    left_name="${FOLDER_LIST[$i]}"
+    left_entry=$(printf "${CYAN}%3d)${NC} %-${col_width}s" "$left_num" "$left_name")
+
+    if [[ $((i + 1)) -lt $total ]]; then
+        right_num=$((i + 2))
+        right_name="${FOLDER_LIST[$((i + 1))]}"
+        right_entry=$(printf "${CYAN}%3d)${NC} %s" "$right_num" "$right_name")
+        echo -e "    $left_entry $right_entry"
+    else
+        echo -e "    $left_entry"
+    fi
+done
+echo ""
+
+# Get selection
+while true; do
+    read -p "  Enter folder numbers: " selection
+
+    if [[ -z "$selection" ]]; then
+        log_error "Please enter at least one folder number"
+        continue
+    fi
+
+    # Parse comma-separated numbers
+    IFS=',' read -ra SELECTIONS <<< "$selection"
+    PANE_FOLDERS=()
+    valid=true
+
+    for num in "${SELECTIONS[@]}"; do
+        num=$(echo "$num" | tr -d ' ')
+
+        if [[ ! "$num" =~ ^[0-9]+$ ]]; then
+            log_error "Invalid number: $num"
+            valid=false
+            break
+        fi
+
+        if [[ "$num" -lt 1 || "$num" -gt "${#FOLDER_LIST[@]}" ]]; then
+            log_error "Number out of range: $num (must be 1-${#FOLDER_LIST[@]})"
+            valid=false
+            break
+        fi
+
+        PANE_FOLDERS+=("$HERD_DIR/${FOLDER_LIST[$((num-1))]}")
+    done
+
+    if [[ "$valid" == "true" ]]; then
+        if [[ ${#PANE_FOLDERS[@]} -gt 4 ]]; then
+            log_error "Maximum 4 panes allowed"
+            continue
+        fi
+        break
+    fi
+done
+
+# Show selected folders
+echo ""
+for ((i=0; i<${#PANE_FOLDERS[@]}; i++)); do
+    log_success "Pane $((i+1)): $(basename "${PANE_FOLDERS[$i]}")"
+done
+
+echo ""
+log_step "Creating tmux session: ${BOLD}$SESSION_NAME${NC}"
+
+# Create tmux session with first pane
+tmux new-session -d -s "$SESSION_NAME" -c "${PANE_FOLDERS[0]}"
+
+# Create additional panes
+for ((i=1; i<${#PANE_FOLDERS[@]}; i++)); do
+    tmux split-window -t "$SESSION_NAME" -h -c "${PANE_FOLDERS[$i]}"
+done
+
+# Even out the layout
+tmux select-layout -t "$SESSION_NAME" even-horizontal
+
+# Wait for panes to be ready
+sleep 1
+
+# Get number of panes
+NUM_PANES=${#PANE_FOLDERS[@]}
+
+# Start Claude in each pane (panes are numbered 0, 1, 2, 3)
+for ((i=0; i<NUM_PANES; i++)); do
+    tmux send-keys -t "$SESSION_NAME:0.$i" "claude" C-m
+done
+
+# Create background script to send prompts
+PROMPT_SCRIPT="/tmp/claude-prompt-$SESSION_NAME.sh"
+cat > "$PROMPT_SCRIPT" << EOF
+#!/bin/bash
+sleep 8
+EOF
+
+for ((i=0; i<NUM_PANES; i++)); do
+    cat >> "$PROMPT_SCRIPT" << EOF
+tmux send-keys -t "$SESSION_NAME:0.$i" "$CLAUDE_PROMPT" C-m
+sleep 1
+EOF
+done
+
+echo "rm -f \"$PROMPT_SCRIPT\"" >> "$PROMPT_SCRIPT"
+chmod +x "$PROMPT_SCRIPT"
+nohup "$PROMPT_SCRIPT" >/dev/null 2>&1 &
+
+# Select first pane
+tmux select-pane -t "$SESSION_NAME:0.0"
+
+echo ""
+log_success "Session created with $NUM_PANES Claude Code instance(s)"
+echo ""
+log_step "Attaching to session..."
+echo ""
+
+# Attach to session
+if [[ -n "$TMUX" ]]; then
+    tmux switch-client -t "$SESSION_NAME"
+else
+    tmux attach-session -t "$SESSION_NAME"
+fi
