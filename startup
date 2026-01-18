@@ -157,16 +157,14 @@ done
 
 # Create background script to send prompts
 PROMPT_SCRIPT="/tmp/claude-prompt-$SESSION_NAME.sh"
-cat > "$PROMPT_SCRIPT" << 'SCRIPT_START'
-#!/bin/bash
-sleep 8
-SCRIPT_START
+
+echo '#!/bin/bash' > "$PROMPT_SCRIPT"
+echo 'sleep 8' >> "$PROMPT_SCRIPT"
 
 for pane_id in $PANE_IDS; do
-    cat >> "$PROMPT_SCRIPT" << PANE_CMD
-tmux send-keys -t "$pane_id" "Run npm run dev in the background, git pull from remote and then tell me status of the git hub repo" C-m
-sleep 1
-PANE_CMD
+    echo "tmux send-keys -t \"$pane_id\" \"Run npm run dev in the background, git pull from remote and then tell me status of the git hub repo\"" >> "$PROMPT_SCRIPT"
+    echo "tmux send-keys -t \"$pane_id\" Enter" >> "$PROMPT_SCRIPT"
+    echo "sleep 1" >> "$PROMPT_SCRIPT"
 done
 
 echo "rm -f \"\$0\"" >> "$PROMPT_SCRIPT"

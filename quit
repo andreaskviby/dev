@@ -1,0 +1,3 @@
+#!/bin/bash
+# Kill all tmux sessions and exit
+tmux kill-server 2>/dev/null && echo "All tmux sessions killed" || echo "No tmux sessions running"
