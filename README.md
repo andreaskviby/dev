@@ -29,15 +29,9 @@ tmux-setup/
 ├── startup_prompt_*.md # Custom prompts for startup
 ├── make-product       # 🆕 BMAD product analysis launcher
 ├── config/
-│   ├── gozero.json    # GoZero session
-│   ├── stafe.json     # STAFE session
-│   ├── private.json   # Private session
-│   ├── aimi.json      # AIMI session
-│   ├── saas.json      # SaaS session
-│   ├── games.json     # Games session
-│   ├── sicily.json    # Sicily session
-│   ├── bmad.json      # 🆕 BMAD Method session
-│   └── *.json         # Add more sessions...
+│   ├── example.json   # Example session template
+│   ├── bmad.json      # BMAD Method session
+│   └── *.json         # Add your own sessions...
 ├── _bmad/             # BMAD Method installation
 └── README.md
 ```
@@ -142,8 +136,8 @@ echo "Your custom prompt here" > startup_prompt_myworkflow.md
 ./tmux-start.sh
 
 # Start specific session
-./tmux-start.sh gozero
-./tmux-start.sh stafe
+./tmux-start.sh example
+./tmux-start.sh bmad
 
 # List configurations
 ./tmux-start.sh --list
@@ -181,14 +175,10 @@ The config manager will:
 
 | Session | Icon | Description |
 |---------|------|-------------|
-| gozero | 🚀 | GoZero Projects |
-| stafe | 🏢 | STAFE Group Projects |
-| private | 🏠 | Private Projects |
-| aimi | 🤖 | AIMI Projects |
-| saas | ☁️ | SaaS Projects |
-| games | 🎮 | Game Projects |
-| sicily | 🫒 | Sicily Projects |
-| **bmad** | **🤖** | **BMAD Method Product Analysis** |
+| example | 📁 | Example session template |
+| bmad | 🤖 | BMAD Method Product Analysis |
+
+Create your own sessions by adding JSON files to `config/`.
 
 ## JSON Configuration
 
@@ -218,13 +208,13 @@ The config manager will:
 
 ```json
 {
-  "session": "gozero",
+  "session": "myproject",
   "icon": "🚀",
-  "description": "GoZero Projects",
+  "description": "My Laravel Project",
   "windows": [
     {
-      "name": "myapp",
-      "directory": "~/Herd/myapp",
+      "name": "webapp",
+      "directory": "~/Herd/webapp",
       "panes": [
         { "name": "serve", "command": "php artisan serve" },
         { "name": "vite", "command": "npm run dev" },
