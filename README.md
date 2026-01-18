@@ -1,9 +1,10 @@
 # TMUX Smart Startup
 
-A configuration-driven TMUX environment manager with JSON-based sessions.
+A configuration-driven TMUX environment manager with JSON-based sessions, now integrated with **BMAD Method** (Breakthrough Method for Agile AI-Driven Development).
 
 ![Terminal Preview](https://img.shields.io/badge/tmux-ready-green?style=flat-square)
 ![Shell](https://img.shields.io/badge/shell-bash-blue?style=flat-square)
+![BMAD](https://img.shields.io/badge/BMAD-integrated-blue?style=flat-square)
 
 ## Features
 
@@ -13,6 +14,8 @@ A configuration-driven TMUX environment manager with JSON-based sessions.
 - **Smart reconnection** - Creates sessions if they don't exist, otherwise reconnects
 - **Nord theme** - Clean, modern status bar and color theme
 - **Config manager** - Interactive script to add/remove projects
+- **🆕 BMAD Method Integration** - AI-driven product analysis with specialized agents
+- **🆕 make-product command** - Launch 4-panel product analysis sessions
 
 ## Structure
 
@@ -21,6 +24,8 @@ tmux-setup/
 ├── tmux-start.sh      # Main startup script
 ├── tmux-manage.sh     # Config manager script
 ├── tmux.conf          # TMUX configuration
+├── startup            # Quick Claude Code launcher
+├── make-product       # 🆕 BMAD product analysis launcher
 ├── config/
 │   ├── gozero.json    # GoZero session
 │   ├── stafe.json     # STAFE session
@@ -29,7 +34,9 @@ tmux-setup/
 │   ├── saas.json      # SaaS session
 │   ├── games.json     # Games session
 │   ├── sicily.json    # Sicily session
+│   ├── bmad.json      # 🆕 BMAD Method session
 │   └── *.json         # Add more sessions...
+├── _bmad/             # BMAD Method installation
 └── README.md
 ```
 
@@ -45,18 +52,51 @@ brew install tmux jq    # macOS
 # or
 sudo apt install tmux jq  # Ubuntu/Debian
 
-# 3. Link tmux.conf
+# 3. Install Node.js (required for BMAD)
+# Node.js v20+ is required
+# Visit https://nodejs.org or use your package manager
+
+# 4. Install BMAD Method (already installed in this repo)
+# If you need to reinstall:
+npx bmad-method@alpha install
+
+# 5. Link tmux.conf
 ln -sf "$(pwd)/tmux.conf" ~/.tmux.conf
 
-# 4. Make scripts executable
-chmod +x tmux-start.sh tmux-manage.sh
+# 6. Make scripts executable
+chmod +x tmux-start.sh tmux-manage.sh startup make-product
 
-# 5. (Optional) Add to PATH
+# 7. (Optional) Add to PATH
 ln -sf "$(pwd)/tmux-start.sh" ~/.local/bin/tmux-start
 ln -sf "$(pwd)/tmux-manage.sh" ~/.local/bin/tmux-manage
+ln -sf "$(pwd)/make-product" ~/.local/bin/make-product
 ```
 
 ## Usage
+
+### 🆕 BMAD Product Analysis (make-product)
+
+Launch a comprehensive 4-panel product analysis session with BMAD Method AI agents:
+
+```bash
+# Interactive mode - select project from ~/Herd
+./make-product
+
+# Direct mode - specify project path
+./make-product ~/Herd/my-project
+./make-product /path/to/any/project
+```
+
+**What it does:**
+- Creates 4 vertical panels in tmux
+- Launches Claude Code in each panel
+- Automatically starts BMAD workflows:
+  - **Panel 1**: Product Brief & Workflow Init (*workflow-init)
+  - **Panel 2**: Research & Market Analysis (*research)
+  - **Panel 3**: Architecture & Planning (*plan)
+  - **Panel 4**: Implementation Status (*workflow-status)
+
+This enables parallel product analysis with specialized AI agents working on different aspects simultaneously.
 
 ### Starting Sessions
 
@@ -111,6 +151,7 @@ The config manager will:
 | saas | ☁️ | SaaS Projects |
 | games | 🎮 | Game Projects |
 | sicily | 🫒 | Sicily Projects |
+| **bmad** | **🤖** | **BMAD Method Product Analysis** |
 
 ## JSON Configuration
 
@@ -213,6 +254,48 @@ NORD8="#88C0D0"   # Accent
   ```bash
   [[ -z "$TMUX" ]] && ~/tmux-setup/tmux-start.sh
   ```
+
+## BMAD Method Integration
+
+This repository integrates the **BMAD Method** (Breakthrough Method for Agile AI-Driven Development) - a comprehensive AI-powered development framework with specialized agents and structured workflows.
+
+### What is BMAD?
+
+BMAD is an open-source framework that brings structure and efficiency to AI-driven development through:
+
+- **21 Specialized Agents**: Product Manager, Architect, Developer, QA, UX Designer, and more
+- **50+ Guided Workflows**: From brainstorming to deployment
+- **Scale-Adaptive Intelligence**: Adjusts complexity based on project needs
+- **Documentation-First**: All context and decisions are versioned
+
+### BMAD Workflows Available
+
+The `make-product` command leverages these BMAD workflows:
+
+1. **`*workflow-init`** - Analyzes your project and recommends an appropriate development track
+2. **`*research`** - Conducts market analysis and competitive research
+3. **`*plan`** - Creates architecture and planning documents
+4. **`*workflow-status`** - Tracks implementation progress and next steps
+
+### Learn More
+
+- **BMAD Documentation**: [docs.bmad-method.org](http://docs.bmad-method.org)
+- **GitHub Repository**: [github.com/bmad-code-org/BMAD-METHOD](https://github.com/bmad-code-org/BMAD-METHOD)
+- **Discord Community**: [Join Discord](https://discord.gg/gk8jAdXWmj)
+
+### BMAD Commands Reference
+
+When in Claude Code with BMAD installed, you can use:
+
+```bash
+*workflow-init        # Initialize and analyze project
+*research            # Start research workflow
+*plan                # Begin planning workflow
+*architect           # Architecture design
+*develop             # Development workflow
+*test                # Testing workflow
+*workflow-status     # Check current status
+```
 
 ## License
 

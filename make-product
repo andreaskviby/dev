@@ -1,0 +1,252 @@
+#!/bin/bash
+# ══════════════════════════════════════════════════════════════════════════════
+# MAKE-PRODUCT - BMAD Method Product Analysis Launcher
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Creates a 4-panel tmux session with BMAD workflows for product analysis.
+# Each panel runs Claude Code with specialized BMAD agents for different aspects
+# of product development.
+#
+# Usage:
+#   ./make-product                    → Interactive mode (select project)
+#   ./make-product ~/Herd/my-project  → Direct mode (specify project path)
+#
+# ══════════════════════════════════════════════════════════════════════════════
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HERD_DIR="${HOME}/Herd"
+SESSION_NAME="bmad-product-$(date +%H%M%S)"
+BMAD_DIR="${SCRIPT_DIR}/_bmad"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+YELLOW='\033[1;33m'
+MAGENTA='\033[0;35m'
+NC='\033[0m'
+BOLD='\033[1m'
+DIM='\033[2m'
+
+# BMAD workflow commands for each panel
+# Panel 1: Product Brief & Analysis
+PANEL_1_PROMPT="*workflow-init"
+
+# Panel 2: Research & Market Analysis
+PANEL_2_PROMPT="*research"
+
+# Panel 3: Architecture & Planning
+PANEL_3_PROMPT="*plan"
+
+# Panel 4: Implementation Tracking
+PANEL_4_PROMPT="*workflow-status"
+
+print_header() {
+    echo ""
+    echo -e "${CYAN}┌──────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${CYAN}│${NC}  ${BOLD}🚀 BMAD Product Analysis - Multi-Panel Launcher${NC}              ${CYAN}│${NC}"
+    echo -e "${CYAN}│${NC}  ${DIM}Breakthrough Method for Agile AI-Driven Development${NC}           ${CYAN}│${NC}"
+    echo -e "${CYAN}└──────────────────────────────────────────────────────────────────┘${NC}"
+    echo ""
+}
+
+log_success() {
+    echo -e "  ${GREEN}✓${NC}  $1"
+}
+
+log_error() {
+    echo -e "  ${RED}✗${NC}  $1"
+}
+
+log_step() {
+    echo -e "  ${MAGENTA}→${NC}  $1"
+}
+
+log_info() {
+    echo -e "  ${CYAN}ℹ${NC}  $1"
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MAIN
+# ─────────────────────────────────────────────────────────────────────────────
+
+print_header
+
+# Check for tmux
+if ! command -v tmux &> /dev/null; then
+    log_error "tmux is not installed!"
+    exit 1
+fi
+
+# Check for BMAD installation
+if [[ ! -d "$BMAD_DIR" ]]; then
+    log_error "BMAD is not installed! Run: npx bmad-method@alpha install"
+    exit 1
+fi
+
+# Determine project directory
+PROJECT_DIR=""
+
+if [[ -n "$1" ]]; then
+    # Direct mode - use provided path
+    PROJECT_DIR="$1"
+    if [[ ! -d "$PROJECT_DIR" ]]; then
+        log_error "Directory not found: $PROJECT_DIR"
+        exit 1
+    fi
+else
+    # Interactive mode - select from Herd directory
+    if [[ ! -d "$HERD_DIR" ]]; then
+        log_error "Herd directory not found: $HERD_DIR"
+        log_info "Please provide a project path: ./make-product /path/to/project"
+        exit 1
+    fi
+
+    # Collect all folders
+    FOLDER_LIST=()
+    for dir in "$HERD_DIR"/*/; do
+        [[ -d "$dir" ]] || continue
+        name=$(basename "$dir")
+        [[ "$name" == .* ]] && continue
+        FOLDER_LIST+=("$name")
+    done
+
+    if [[ ${#FOLDER_LIST[@]} -eq 0 ]]; then
+        log_error "No projects found in $HERD_DIR"
+        log_info "Please provide a project path: ./make-product /path/to/project"
+        exit 1
+    fi
+
+    # Display in 2 columns
+    echo -e "  ${BOLD}Select a project for product analysis:${NC}"
+    echo -e "  ${DIM}Enter the number of your project${NC}"
+    echo ""
+
+    total=${#FOLDER_LIST[@]}
+    col_width=35
+
+    for ((i=0; i<total; i+=2)); do
+        left_num=$((i + 1))
+        left_name="${FOLDER_LIST[$i]}"
+        left_entry=$(printf "${CYAN}%3d)${NC} %-${col_width}s" "$left_num" "$left_name")
+
+        if [[ $((i + 1)) -lt $total ]]; then
+            right_num=$((i + 2))
+            right_name="${FOLDER_LIST[$((i + 1))]}"
+            right_entry=$(printf "${CYAN}%3d)${NC} %s" "$right_num" "$right_name")
+            echo -e "    $left_entry $right_entry"
+        else
+            echo -e "    $left_entry"
+        fi
+    done
+    echo ""
+
+    # Get selection
+    while true; do
+        read -p "  Enter project number: " selection
+
+        if [[ -z "$selection" ]]; then
+            log_error "Please enter a project number"
+            continue
+        fi
+
+        if [[ ! "$selection" =~ ^[0-9]+$ ]]; then
+            log_error "Invalid number: $selection"
+            continue
+        fi
+
+        if [[ "$selection" -lt 1 || "$selection" -gt "${#FOLDER_LIST[@]}" ]]; then
+            log_error "Number out of range: $selection (must be 1-${#FOLDER_LIST[@]})"
+            continue
+        fi
+
+        PROJECT_DIR="$HERD_DIR/${FOLDER_LIST[$((selection-1))]}"
+        break
+    done
+fi
+
+# Show selected project
+echo ""
+log_success "Selected project: ${BOLD}$(basename "$PROJECT_DIR")${NC}"
+log_info "Path: ${DIM}$PROJECT_DIR${NC}"
+
+echo ""
+log_step "Creating BMAD product analysis session: ${BOLD}$SESSION_NAME${NC}"
+echo ""
+log_info "This session will have 4 panels for comprehensive product analysis:"
+echo ""
+echo -e "    ${CYAN}Panel 1:${NC} Product Brief & Workflow Init (PM & Strategy)"
+echo -e "    ${CYAN}Panel 2:${NC} Research & Market Analysis"
+echo -e "    ${CYAN}Panel 3:${NC} Architecture & Planning"
+echo -e "    ${CYAN}Panel 4:${NC} Implementation Status & Tracking"
+echo ""
+
+# Create tmux session with first pane
+tmux new-session -d -s "$SESSION_NAME" -n "product-analysis" -c "$PROJECT_DIR"
+
+# Create 3 more panes (total 4)
+for ((i=1; i<4; i++)); do
+    tmux split-window -t "$SESSION_NAME" -h -c "$PROJECT_DIR"
+done
+
+# Even out the layout (4 equal vertical panes)
+tmux select-layout -t "$SESSION_NAME" even-horizontal
+
+# Wait for panes to be ready
+sleep 1
+
+# Start Claude Code in each pane
+log_step "Starting Claude Code in all panels..."
+for ((i=0; i<4; i++)); do
+    tmux send-keys -t "$SESSION_NAME:0.$i" "claude" C-m
+done
+
+# Create background script to send BMAD workflow prompts
+PROMPT_SCRIPT="/tmp/bmad-prompt-$SESSION_NAME.sh"
+cat > "$PROMPT_SCRIPT" << 'EOF'
+#!/bin/bash
+# Wait for Claude Code to initialize
+sleep 10
+
+# Panel 0: Product Brief & Workflow Init
+tmux send-keys -t "$1:0.0" "$2" C-m
+sleep 2
+
+# Panel 1: Research & Market Analysis
+tmux send-keys -t "$1:0.1" "$3" C-m
+sleep 2
+
+# Panel 2: Architecture & Planning
+tmux send-keys -t "$1:0.2" "$4" C-m
+sleep 2
+
+# Panel 3: Implementation Status
+tmux send-keys -t "$1:0.3" "$5" C-m
+
+# Clean up
+rm -f "$0"
+EOF
+
+chmod +x "$PROMPT_SCRIPT"
+nohup "$PROMPT_SCRIPT" "$SESSION_NAME" "$PANEL_1_PROMPT" "$PANEL_2_PROMPT" "$PANEL_3_PROMPT" "$PANEL_4_PROMPT" >/dev/null 2>&1 &
+
+# Select first pane
+tmux select-pane -t "$SESSION_NAME:0.0"
+
+echo ""
+log_success "BMAD product analysis session created!"
+echo ""
+log_info "${BOLD}Panel Layout:${NC}"
+echo -e "    ${CYAN}│ Panel 1 │ Panel 2 │ Panel 3 │ Panel 4 │${NC}"
+echo ""
+log_info "BMAD workflows will auto-start in each panel in ~10 seconds"
+echo ""
+log_step "Attaching to session..."
+echo ""
+
+# Attach to session
+if [[ -n "$TMUX" ]]; then
+    tmux switch-client -t "$SESSION_NAME"
+else
+    tmux attach-session -t "$SESSION_NAME"
+fi
