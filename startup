@@ -147,37 +147,37 @@ tmux select-layout -t "$SESSION_NAME" even-horizontal
 # Wait for panes to be ready
 sleep 1
 
-# Get number of panes
-NUM_PANES=${#PANE_FOLDERS[@]}
+# Get pane IDs (these are unique identifiers like %0, %1, %2)
+PANE_IDS=$(tmux list-panes -t "$SESSION_NAME" -F '#{pane_id}' | tr '\n' ' ')
 
-# Start Claude in each pane (panes are numbered 0, 1, 2, 3)
-for ((i=0; i<NUM_PANES; i++)); do
-    tmux send-keys -t "$SESSION_NAME:0.$i" "claude" C-m
+# Start Claude in each pane
+for pane_id in $PANE_IDS; do
+    tmux send-keys -t "$pane_id" "claude" C-m
 done
 
 # Create background script to send prompts
 PROMPT_SCRIPT="/tmp/claude-prompt-$SESSION_NAME.sh"
-cat > "$PROMPT_SCRIPT" << EOF
+cat > "$PROMPT_SCRIPT" << 'SCRIPT_START'
 #!/bin/bash
 sleep 8
-EOF
+SCRIPT_START
 
-for ((i=0; i<NUM_PANES; i++)); do
-    cat >> "$PROMPT_SCRIPT" << EOF
-tmux send-keys -t "$SESSION_NAME:0.$i" "$CLAUDE_PROMPT" C-m
+for pane_id in $PANE_IDS; do
+    cat >> "$PROMPT_SCRIPT" << PANE_CMD
+tmux send-keys -t "$pane_id" "Run npm run dev in the background, git pull from remote and then tell me status of the git hub repo" C-m
 sleep 1
-EOF
+PANE_CMD
 done
 
-echo "rm -f \"$PROMPT_SCRIPT\"" >> "$PROMPT_SCRIPT"
+echo "rm -f \"\$0\"" >> "$PROMPT_SCRIPT"
 chmod +x "$PROMPT_SCRIPT"
 nohup "$PROMPT_SCRIPT" >/dev/null 2>&1 &
 
 # Select first pane
-tmux select-pane -t "$SESSION_NAME:0.0"
+tmux select-pane -t "$SESSION_NAME"
 
 echo ""
-log_success "Session created with $NUM_PANES Claude Code instance(s)"
+log_success "Session created with ${#PANE_FOLDERS[@]} Claude Code instance(s)"
 echo ""
 log_step "Attaching to session..."
 echo ""
