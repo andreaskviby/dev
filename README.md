@@ -25,6 +25,8 @@ tmux-setup/
 ├── tmux-manage.sh     # Config manager script
 ├── tmux.conf          # TMUX configuration
 ├── startup            # Quick Claude Code launcher
+├── quit               # Kill all tmux sessions
+├── startup_prompt_*.md # Custom prompts for startup
 ├── make-product       # 🆕 BMAD product analysis launcher
 ├── config/
 │   ├── gozero.json    # GoZero session
@@ -97,6 +99,41 @@ Launch a comprehensive 4-panel product analysis session with BMAD Method AI agen
   - **Panel 4**: Implementation Status (*workflow-status)
 
 This enables parallel product analysis with specialized AI agents working on different aspects simultaneously.
+
+### Quick Startup with Claude Code
+
+Launch Claude Code in multiple panes with customizable prompts:
+
+```bash
+./startup           # Default (uses startup_prompt_en.md)
+./startup en        # English prompt
+./startup sv        # Swedish prompt
+./startup saas      # SaaS-specific prompt
+./startup laravel   # Laravel-specific prompt
+```
+
+**How it works:**
+1. Shows all folders in `~/Herd/`
+2. Enter folder numbers (comma-separated): `37,51,47`
+3. Creates tmux session with 1-4 vertical panes
+4. Starts Claude Code in each pane
+5. Auto-sends the prompt from `startup_prompt_<name>.md`
+
+**Create custom prompts:**
+```bash
+# Create a new prompt file
+echo "Your custom prompt here" > startup_prompt_myworkflow.md
+
+# Use it
+./startup myworkflow
+```
+
+**Available prompts:**
+| File | Usage | Description |
+|------|-------|-------------|
+| `startup_prompt_en.md` | `./startup en` | English default prompt |
+| `startup_prompt_sv.md` | `./startup sv` | Swedish default prompt |
+| `startup_prompt_saas.md` | `./startup saas` | SaaS project starter |
 
 ### Starting Sessions
 
@@ -228,6 +265,8 @@ When adding projects via `./tmux-manage.sh add`, you can choose from these templ
 | `Ctrl+a J/K` | Next/previous session |
 | `Ctrl+a =` | Even out pane layout |
 | `Ctrl+a r` | Reload config |
+| `Ctrl+a Q` | Kill all sessions (quit) |
+| `Ctrl+h/j/k/l` | Navigate panes (Warp-compatible) |
 
 ## Customization
 

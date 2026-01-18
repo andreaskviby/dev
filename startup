@@ -1,11 +1,16 @@
 #!/bin/bash
 # ══════════════════════════════════════════════════════════════════════════════
 # STARTUP - Quick Claude Code multi-pane launcher
+# Usage: ./startup [lang]  (e.g., ./startup en, ./startup sv)
 # ══════════════════════════════════════════════════════════════════════════════
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HERD_DIR="$HOME/Herd"
 SESSION_NAME="dev-$(date +%H%M%S)"
+
+# Language (default: en)
+LANG_CODE="${1:-en}"
+PROMPT_FILE="$SCRIPT_DIR/startup_prompt_${LANG_CODE}.md"
 
 # Colors
 RED='\033[0;31m'
@@ -15,8 +20,14 @@ NC='\033[0m'
 BOLD='\033[1m'
 DIM='\033[2m'
 
-# Claude startup prompt
-CLAUDE_PROMPT="Run npm run dev in the background, git pull from remote and then tell me status of the git hub repo"
+# Load prompt from file
+if [[ -f "$PROMPT_FILE" ]]; then
+    CLAUDE_PROMPT=$(cat "$PROMPT_FILE")
+else
+    echo -e "  ${RED}✗${NC}  Prompt file not found: $PROMPT_FILE"
+    echo -e "  ${DIM}Available: startup_prompt_en.md, startup_prompt_sv.md${NC}"
+    exit 1
+fi
 
 print_header() {
     echo ""
@@ -34,6 +45,10 @@ log_error() {
     echo -e "  ${RED}✗${NC}  $1"
 }
 
+log_info() {
+    echo -e "  ${CYAN}ℹ${NC}  $1"
+}
+
 log_step() {
     echo -e "  ${CYAN}→${NC}  $1"
 }
@@ -43,6 +58,8 @@ log_step() {
 # ─────────────────────────────────────────────────────────────────────────────
 
 print_header
+
+log_info "Language: ${BOLD}$LANG_CODE${NC}"
 
 # Check for tmux
 if ! command -v tmux &> /dev/null; then
@@ -162,7 +179,7 @@ echo '#!/bin/bash' > "$PROMPT_SCRIPT"
 echo 'sleep 8' >> "$PROMPT_SCRIPT"
 
 for pane_id in $PANE_IDS; do
-    echo "tmux send-keys -t \"$pane_id\" \"Run npm run dev in the background, git pull from remote and then tell me status of the git hub repo\"" >> "$PROMPT_SCRIPT"
+    echo "tmux send-keys -t \"$pane_id\" \"$CLAUDE_PROMPT\"" >> "$PROMPT_SCRIPT"
     echo "tmux send-keys -t \"$pane_id\" Enter" >> "$PROMPT_SCRIPT"
     echo "sleep 1" >> "$PROMPT_SCRIPT"
 done
