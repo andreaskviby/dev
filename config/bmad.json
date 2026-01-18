@@ -1,0 +1,29 @@
+{
+  "session": "bmad",
+  "icon": "🤖",
+  "description": "BMAD Method Product Analysis - 4 specialized AI agents",
+  "windows": [
+    {
+      "name": "product-analysis",
+      "directory": "~/Herd",
+      "panes": [
+        {
+          "name": "product-brief",
+          "command": null
+        },
+        {
+          "name": "research",
+          "command": null
+        },
+        {
+          "name": "architecture",
+          "command": null
+        },
+        {
+          "name": "implementation",
+          "command": null
+        }
+      ]
+    }
+  ]
+}
