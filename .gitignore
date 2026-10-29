@@ -11,3 +11,9 @@ package-lock.json
 *.tmp
 *.log
 /tmp/
+
+# Secrets — aldrig i git (tillagt 2026-09-06 efter nyckelincidenten)
+.env*
+!.env.example
+!.env.*.example
+!.env.production.example
